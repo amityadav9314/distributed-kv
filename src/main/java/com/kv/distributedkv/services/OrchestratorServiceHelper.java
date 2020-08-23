@@ -2,7 +2,7 @@ package com.kv.distributedkv.services;
 
 import com.kv.distributedkv.constants.KVUrl;
 import com.kv.distributedkv.dtos.AvailableNodes;
-import com.kv.distributedkv.dtos.Node;
+import com.kv.distributedkv.dtos.ServicePhysicalNode;
 import com.kv.distributedkv.utils.JsonConverter;
 import com.kv.distributedkv.utils.KVUtil;
 import com.squareup.okhttp.*;
@@ -19,10 +19,10 @@ public class OrchestratorServiceHelper {
     @Autowired
     private OkHttpClient httpClient;
 
-    protected boolean isNodeAlreadyAdded(String ip, String port, String md5HashStr, AvailableNodes availableNodes) {
+    protected boolean isNodeAlreadyAdded(String ip, String port, AvailableNodes availableNodes) {
         boolean nodeAlreadyAdded = false;
-        for (Node node : availableNodes.getAllNodes()) {
-            if (node.getMd5Hash().equalsIgnoreCase(md5HashStr)) {
+        for (ServicePhysicalNode node : availableNodes.getAllNodes()) {
+            if (node.getIp().equalsIgnoreCase(ip) && node.getPort().equalsIgnoreCase(port)) {
                 nodeAlreadyAdded = true;
                 KVUtil.log(String.format("%s:%s is already in available nodes, so not storing again", ip, port));
                 break;
@@ -32,9 +32,9 @@ public class OrchestratorServiceHelper {
     }
 
     protected AvailableNodes addANewNode(String ip, String port, String md5HashStr, boolean isOrchestrator, AvailableNodes availableNodes) {
-        boolean nodeAlreadyAdded = isNodeAlreadyAdded(ip, port, md5HashStr, availableNodes);
+        boolean nodeAlreadyAdded = isNodeAlreadyAdded(ip, port, availableNodes);
         if (!nodeAlreadyAdded) {
-            Node newNode = new Node(ip, port, md5HashStr, isOrchestrator);
+            ServicePhysicalNode newNode = new ServicePhysicalNode(ip, port, md5HashStr, isOrchestrator);
             availableNodes.getAllNodes().add(newNode);
         }
         return availableNodes;
@@ -56,7 +56,7 @@ public class OrchestratorServiceHelper {
         try {
             String availableNodesJson = JsonConverter.convertObjectToJsonSafe(availableNodes);
             // todo - amit use threads to notify
-            for (Node node : availableNodes.getAllNodes()) {
+            for (ServicePhysicalNode node : availableNodes.getAllNodes()) {
                 String url = String.format("http://%s:%s%s", node.getIp(), node.getPort(), KVUrl.CALLBACK_TO_UPDATE_NODES);
                 RequestBody body = RequestBody.create(
                         MediaType.parse("application/json; charset=utf-8"),
@@ -68,6 +68,7 @@ public class OrchestratorServiceHelper {
                         .post(body)
                         .build();
                 Response response = httpClient.newCall(request).execute();
+                response.body().string();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -79,7 +80,9 @@ public class OrchestratorServiceHelper {
             String url = String.format("http://%s:%s%s", ip, port, KVUrl.HEALTH);
             Request request = new Request.Builder().url(url).build();
             Response response = httpClient.newCall(request).execute();
-            return response.isSuccessful();
+            boolean isSuccess = response.isSuccessful();
+            response.body().string();
+            return isSuccess;
         } catch (IOException e) {
             return false;
         }

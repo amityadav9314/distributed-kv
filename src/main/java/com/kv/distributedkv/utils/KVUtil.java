@@ -1,5 +1,6 @@
 package com.kv.distributedkv.utils;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -53,5 +56,11 @@ public class KVUtil {
         } else if (logType.equalsIgnoreCase("log4j")) {
             LOGGER.error(msg, e);
         }
+    }
+
+    public static Pair<String, String> getIPAndPort() throws UnknownHostException {
+        String thisHostName = InetAddress.getLocalHost().getHostAddress();
+        String thisPort = System.getProperty("server.port");
+        return Pair.of(thisHostName, thisPort);
     }
 }

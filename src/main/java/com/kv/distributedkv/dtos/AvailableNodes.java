@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AvailableNodes {
-    private List<Node> allNodes = new ArrayList<>();
+    private List<ServicePhysicalNode> allNodes = new ArrayList<>();
 
-    public List<Node> getAllNodes() {
+    public List<ServicePhysicalNode> getAllNodes() {
         return allNodes;
     }
 
-    public void setAllNodes(List<Node> allNodes) {
+    public void setAllNodes(List<ServicePhysicalNode> allNodes) {
         this.allNodes = allNodes;
     }
 }

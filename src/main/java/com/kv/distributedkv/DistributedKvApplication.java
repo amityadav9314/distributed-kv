@@ -2,6 +2,7 @@ package com.kv.distributedkv;
 
 import com.kv.distributedkv.services.OrchestratorService;
 import com.kv.distributedkv.utils.KVUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -24,8 +25,9 @@ public class DistributedKvApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        String thisHostName = InetAddress.getLocalHost().getHostAddress();
-        String thisPort = System.getProperty("server.port");
+        Pair<String, String> ipPortPair = KVUtil.getIPAndPort();
+        String thisHostName = ipPortPair.getLeft();
+        String thisPort = ipPortPair.getRight();
 
         String orchestrator = System.getProperty("orchestrator");
         if (orchestrator == null) {

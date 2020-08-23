@@ -13,14 +13,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class OrchestratorController {
 
+    @Autowired
     private OrchestratorService orchestratorService;
 
-    @Autowired
-    public OrchestratorController(OrchestratorService orchestratorService) {
-        this.orchestratorService = orchestratorService;
-    }
-
-    @GetMapping(KVUrl.DO_REGISTER)
+    @GetMapping(KVUrl.REGISTER_A_NODE)
     public AvailableNodes doRegister(@RequestParam("ip") String ip, @RequestParam("port") String port) {
         AvailableNodes newAvailableNodes = orchestratorService.doRegister(ip, port);
         KVUtil.log(String.format("%s:%s is successfully registered to orchestrator", ip, port));
