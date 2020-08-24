@@ -21,7 +21,7 @@ public class ApplicationStartupTask {
     private RESTCall restCall;
 
     @EventListener(ApplicationReadyEvent.class)
-    public void registerANodeToOrchestrator() throws UnknownHostException {
+    public void registerThisNodeToOrchestrator() throws UnknownHostException {
         Pair<String, String> ipPortPair = KVUtil.getIPAndPort();
         String thisHostName = ipPortPair.getLeft();
         String thisPort = ipPortPair.getRight();

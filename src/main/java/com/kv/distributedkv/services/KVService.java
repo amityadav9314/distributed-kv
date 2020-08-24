@@ -65,6 +65,7 @@ public class KVService {
             }
             kvResponse.setStatus(ResponseStatus.SUCCESS);
         } catch (Exception e) {
+            KVUtil.log("Error in getting data", e);
             return KVUtil.getErrorBaseResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e);
         }
         return kvResponse;
@@ -101,6 +102,7 @@ public class KVService {
                 replicateData(key, payload, replicationFactor, replicationStrategy);
             }
         } catch (Exception e) {
+            KVUtil.log("Error in posting data", e);
             return KVUtil.getErrorBaseResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e);
         }
         return kvResponse;

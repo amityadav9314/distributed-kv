@@ -24,12 +24,15 @@ public class RESTCall {
 
     public KVResponse getDataFromNode(String key, ServicePhysicalNode node, int replicationFactor) {
         try {
+            String httpClientResponse;
             String url = String.format("http://%s:%s%s/%s", node.getIp(), node.getPort(), KVUrl.KV, key);
             Request request = new Request.Builder().url(url).build();
             Response response = httpClient.newCall(request).execute();
             boolean isSuccess = response.isSuccessful();
             if (isSuccess) {
-                return JsonConverter.convertJsonToObjectSafe(response.body().string(), KVResponse.class);
+                httpClientResponse = response.body().string();
+                response.body().close();
+                return JsonConverter.convertJsonToObjectSafe(httpClientResponse, KVResponse.class);
             } else {
                 int i = 1;
                 while (i <= replicationFactor) {
@@ -39,11 +42,14 @@ public class RESTCall {
                     response = httpClient.newCall(request).execute();
                     isSuccess = response.isSuccessful();
                     if (isSuccess) {
-                        return JsonConverter.convertJsonToObjectSafe(response.body().string(), KVResponse.class);
+                        httpClientResponse = response.body().string();
+                        response.body().close();
+                        return JsonConverter.convertJsonToObjectSafe(httpClientResponse, KVResponse.class);
                     } else {
                         i++;
                     }
                 }
+                response.body().close();
                 throw new RuntimeException("Data can not be found");
             }
         } catch (IOException e) {
@@ -54,7 +60,7 @@ public class RESTCall {
     public KVResponse postDataToNode(String key, String payload, ServicePhysicalNode node, Integer i) {
         try {
             String url;
-            if(i == null) {
+            if (i == null) {
                 url = String.format("http://%s:%s%s/%s", node.getIp(), node.getPort(), KVUrl.KV, key);
             } else {
                 url = String.format("http://%s:%s%s/%s/%s", node.getIp(), node.getPort(), KVUrl.KV_REPLICATE, key, i);
@@ -72,7 +78,9 @@ public class RESTCall {
             Response response = httpClient.newCall(request).execute();
             boolean isSuccess = response.isSuccessful();
             if (isSuccess) {
-                return JsonConverter.convertJsonToObjectSafe(response.body().string(), KVResponse.class);
+                String httpClientResponse = response.body().string();
+                response.body().close();
+                return JsonConverter.convertJsonToObjectSafe(httpClientResponse, KVResponse.class);
             } else {
                 throw new RuntimeException("Data can not be posted");
             }
@@ -90,12 +98,14 @@ public class RESTCall {
             Response response = httpClient.newCall(request).execute();
             if (!response.isSuccessful()) {
                 KVUtil.log(String.format("Failed while registering to orchestrator"));
+                response.body().close();
                 System.exit(1);
             } else {
                 // Update availableNodes
                 // availableNodes = JsonConverter.convertJsonToObject(response.body().string(), AvailableNodes.class);
                 KVUtil.log(String.format("%s:%s is successfully registered to orchestrator", ip, port));
                 // KVUtil.log(String.format("New available nodes are: %s", JsonConverter.convertObjectToJsonSafe(availableNodes)));
+                response.body().close();
             }
         } catch (IOException e) {
             KVUtil.log(String.format("Failed while registering to orchestrator"), e);
@@ -110,8 +120,10 @@ public class RESTCall {
             Response response = httpClient.newCall(request).execute();
             boolean isSuccess = response.isSuccessful();
             response.body().string();
+            response.body().close();
             return isSuccess;
         } catch (IOException e) {
+            KVUtil.log("Error in health check", e);
             return false;
         }
     }
@@ -133,9 +145,10 @@ public class RESTCall {
                         .build();
                 Response response = httpClient.newCall(request).execute();
                 response.body().string();
+                response.body().close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            KVUtil.log("Error in notifying to all nodes", e);
         }
     }
 
