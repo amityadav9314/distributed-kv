@@ -1,5 +1,9 @@
 package com.kv.distributedkv.utils;
 
+import com.kv.distributedkv.dtos.BaseResponse;
+import com.kv.distributedkv.dtos.ErrorDetails;
+import com.kv.distributedkv.dtos.KVResponse;
+import com.kv.distributedkv.dtos.ResponseStatus;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,5 +66,15 @@ public class KVUtil {
         String thisHostName = InetAddress.getLocalHost().getHostAddress();
         String thisPort = System.getProperty("server.port");
         return Pair.of(thisHostName, thisPort);
+    }
+
+    public static KVResponse getErrorBaseResponse(int systemCode, Exception e) {
+        KVResponse kvResponse = new KVResponse();
+        ErrorDetails errorDetails = new ErrorDetails();
+        errorDetails.setErrorMessage(e.getMessage());
+        errorDetails.setErrorSystemCode(systemCode);
+        kvResponse.setError(errorDetails);
+        kvResponse.setStatus(ResponseStatus.FAILED);
+        return kvResponse;
     }
 }

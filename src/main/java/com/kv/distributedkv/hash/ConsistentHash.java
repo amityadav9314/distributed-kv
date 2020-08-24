@@ -2,10 +2,7 @@ package com.kv.distributedkv.hash;
 
 import com.kv.distributedkv.dtos.ServicePhysicalNode;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 public class ConsistentHash {
     private final SortedMap<Long, ServicePhysicalNode> ring = new TreeMap<>();
@@ -44,7 +41,7 @@ public class ConsistentHash {
         throw new RuntimeException("Node not found to remove");
     }
 
-    public ServicePhysicalNode routeNode(String key) {
+    public ServicePhysicalNode getPrimaryNode(String key) {
         if (ring.isEmpty()) {
             throw new RuntimeException("Ring is empty");
         }
@@ -53,5 +50,20 @@ public class ConsistentHash {
         SortedMap<Long, ServicePhysicalNode> tailMap = ring.tailMap(hashValue);
         long nodeHashValue = !tailMap.isEmpty() ? tailMap.firstKey() : ring.firstKey();
         return ring.get(nodeHashValue);
+    }
+
+    public ServicePhysicalNode getNthPrimaryNode(String key, int nth) {
+        if (ring.isEmpty()) {
+            throw new RuntimeException("Ring is empty");
+        }
+
+        long hashValue = hashFunction.hash(key);
+        SortedMap<Long, ServicePhysicalNode> tailMap = ring.tailMap(hashValue);
+        if(tailMap.isEmpty()) {
+            tailMap = ring;
+        }
+        List<ServicePhysicalNode> values = new ArrayList<>(tailMap.values());
+        ServicePhysicalNode nthNode = values.get(nth);
+        return nthNode;
     }
 }

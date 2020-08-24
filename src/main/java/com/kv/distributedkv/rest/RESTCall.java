@@ -3,6 +3,7 @@ package com.kv.distributedkv.rest;
 import com.kv.distributedkv.constants.KVUrl;
 import com.kv.distributedkv.dtos.KVResponse;
 import com.kv.distributedkv.dtos.ServicePhysicalNode;
+import com.kv.distributedkv.services.OrchestratorService;
 import com.kv.distributedkv.utils.JsonConverter;
 import com.squareup.okhttp.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,10 @@ public class RESTCall {
     @Autowired
     private OkHttpClient httpClient;
 
-    public KVResponse getDataFromNode(String key, ServicePhysicalNode node) {
+    @Autowired
+    private OrchestratorService orchestratorService;
+
+    public KVResponse getDataFromNode(String key, ServicePhysicalNode node, int replicationFactor) {
         try {
             String url = String.format("http://%s:%s%s/%s", node.getIp(), node.getPort(), KVUrl.KV, key);
             Request request = new Request.Builder().url(url).build();
@@ -25,6 +29,19 @@ public class RESTCall {
             if (isSuccess) {
                 return JsonConverter.convertJsonToObjectSafe(response.body().string(), KVResponse.class);
             } else {
+                int i = 1;
+                while (i <= replicationFactor) {
+                    ServicePhysicalNode secondaryNode = orchestratorService.getConsistentHash().getNthPrimaryNode(key, i);
+                    url = String.format("http://%s:%s%s/%s", secondaryNode.getIp(), secondaryNode.getPort(), KVUrl.KV, key);
+                    request = new Request.Builder().url(url).build();
+                    response = httpClient.newCall(request).execute();
+                    isSuccess = response.isSuccessful();
+                    if (isSuccess) {
+                        return JsonConverter.convertJsonToObjectSafe(response.body().string(), KVResponse.class);
+                    } else {
+                        i++;
+                    }
+                }
                 throw new RuntimeException("Data can not be found");
             }
         } catch (IOException e) {
@@ -32,9 +49,14 @@ public class RESTCall {
         }
     }
 
-    public KVResponse postDataToNode(String key, String payload, ServicePhysicalNode node) {
+    public KVResponse postDataToNode(String key, String payload, ServicePhysicalNode node, Integer i) {
         try {
-            String url = String.format("http://%s:%s%s/%s", node.getIp(), node.getPort(), KVUrl.KV, key);
+            String url;
+            if(i == null) {
+                url = String.format("http://%s:%s%s/%s", node.getIp(), node.getPort(), KVUrl.KV, key);
+            } else {
+                url = String.format("http://%s:%s%s/%s/%s", node.getIp(), node.getPort(), KVUrl.KV_REPLICATE, key, i);
+            }
             RequestBody body = RequestBody.create(
                     MediaType.parse("application/json; charset=utf-8"),
                     payload

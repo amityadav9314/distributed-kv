@@ -6,4 +6,6 @@ public class KVUrl {
     public static final String ALL_NODES = "/all-nodes";
     public static final String HEALTH = "/health";
     public static final String KV = "/kv";
+    public static final String KV_REPLICATE= "/kv/replicate";
+    public static final String KV_ALL_DATA = "/kv/all-data";
 }
