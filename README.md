@@ -11,6 +11,13 @@
     mvn clean install
     ./demo_kv.sh
     
+### After following above steps following node must be available up and running
+    127.0.0.1:8080
+    127.0.0.1:8081
+    127.0.0.1:8082
+    127.0.0.1:8083
+    127.0.0.1:8084
+    
 ### To add a new key (You can use any node)
     curl --location --request POST '127.0.0.1:8080/kv/best_movie' \
     --header 'Content-Type: text/plain' \
