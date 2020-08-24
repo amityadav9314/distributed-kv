@@ -130,7 +130,7 @@ public class KVService {
     }
 
     public KVResponse put(String key, String data) {
-        return null;
+        throw new NotImplementedException();
     }
 
     public Map<String, String> getData() {

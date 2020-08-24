@@ -1,6 +1,5 @@
 package com.kv.distributedkv.utils;
 
-import com.kv.distributedkv.dtos.BaseResponse;
 import com.kv.distributedkv.dtos.ErrorDetails;
 import com.kv.distributedkv.dtos.KVResponse;
 import com.kv.distributedkv.dtos.ResponseStatus;
