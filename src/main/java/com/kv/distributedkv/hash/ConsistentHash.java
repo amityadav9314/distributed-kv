@@ -63,7 +63,13 @@ public class ConsistentHash {
             tailMap = ring;
         }
         List<ServicePhysicalNode> values = new ArrayList<>(tailMap.values());
-        ServicePhysicalNode nthNode = values.get(nth);
+        ServicePhysicalNode nthNode;
+        try {
+            nthNode = values.get(nth);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            values = new ArrayList<>(ring.values());
+            nthNode = values.get(nth);
+        }
         return nthNode;
     }
 }

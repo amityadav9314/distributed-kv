@@ -32,11 +32,13 @@ public class KVService {
             @Value("${replication.factor}") int replicationFactor,
             @Value("${replication.strategy}") ReplicationStrategy replicationStrategy
     ) {
-        this.replicationFactor = replicationFactor;
-        this.replicationStrategy = replicationStrategy;
+        KVService.replicationFactor = replicationFactor;
+        KVService.replicationStrategy = replicationStrategy;
     }
 
-    private Map<String, String> data = new HashMap<>();
+    // TODO - amit it is a good idea to store replicated data into another map
+    // private Map<String, String> replicatedData = new HashMap<>();
+    private final Map<String, String> data = new HashMap<>();
 
     @Autowired
     private OrchestratorService orchestratorService;

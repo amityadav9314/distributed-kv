@@ -13,9 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class UpdateAllNodesAboutAvailableNodes {
@@ -53,12 +54,40 @@ public class UpdateAllNodesAboutAvailableNodes {
             realAvailableNodes.setAllNodes(nodes);
             KVUtil.log(String.format("ScheduleTask running::: New healthy nodes are: %s", JsonConverter.convertObjectToJsonSafe(realAvailableNodes)));
             notifyAllNodesSync(realAvailableNodes);
-        } catch (UnknownHostException e) {
-
+            rebalance(availableNodes, realAvailableNodes);
+        } catch (Exception e) {
+            KVUtil.log("Error in updating all nodes", e);
         }
     }
 
-    protected void notifyAllNodesAsync(AvailableNodes availableNodes) {
+    private void rebalance(AvailableNodes oldAvailableNodes, AvailableNodes newAvailableNodes) {
+        Set<ServicePhysicalNode> added = getNewlyAddedNodes(oldAvailableNodes, newAvailableNodes);
+        Set<ServicePhysicalNode> removed = getNewlyRemovedNodes(oldAvailableNodes, newAvailableNodes);
+        rebalanceRemovedNodes(removed);
+        rebalanceAddedNodes(added);
+    }
+
+    private void rebalanceAddedNodes(Set<ServicePhysicalNode> added) {
+    }
+
+    private void rebalanceRemovedNodes(Set<ServicePhysicalNode> removed) {
+    }
+
+    private Set<ServicePhysicalNode> getNewlyRemovedNodes(AvailableNodes oldAvailableNodes, AvailableNodes newAvailableNodes) {
+        Set<ServicePhysicalNode> oldSet = new HashSet<>(oldAvailableNodes.getAllNodes());
+        Set<ServicePhysicalNode> newSet = new HashSet<>(newAvailableNodes.getAllNodes());
+        oldSet.removeAll(newSet);
+        return oldSet;
+    }
+
+    private Set<ServicePhysicalNode> getNewlyAddedNodes(AvailableNodes oldAvailableNodes, AvailableNodes newAvailableNodes) {
+        Set<ServicePhysicalNode> oldSet = new HashSet<>(oldAvailableNodes.getAllNodes());
+        Set<ServicePhysicalNode> newSet = new HashSet<>(newAvailableNodes.getAllNodes());
+        newSet.removeAll(oldSet);
+        return newSet;
+    }
+
+    private void notifyAllNodesAsync(AvailableNodes availableNodes) {
         // todo - amit use threads to notify
         Observable.fromCallable(() -> {
             restCall.doNotifyAllNodes(availableNodes);
@@ -66,7 +95,7 @@ public class UpdateAllNodesAboutAvailableNodes {
         }).subscribeOn(Schedulers.io()).subscribe();
     }
 
-    public void notifyAllNodesSync(AvailableNodes availableNodes) {
+    private void notifyAllNodesSync(AvailableNodes availableNodes) {
         restCall.doNotifyAllNodes(availableNodes);
     }
 }
