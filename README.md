@@ -1,5 +1,17 @@
 # Distributed Key-Value store
 
+### Idea description
+This K-V store follows a partial master-slave for node discovery and peer-to-peer for getting and setting up values.
+
+First a `orchestrator` machine is set up. This acts as master/primary node. Once `orchestrator` comes up, then we are ready to instantiate our secondary nodes.
+
+Whenever any node is instantiated, it registers itself to `orchestrator`. Every secondary nodes takes a -VM argument for `orchestrator`.
+
+`Orchestrator` periodically communicates every node about every other nodes in a list of all available nodes after checking health check of each and every node at that time.
+
+There is no `server` and `client` concept in this K-V store. Each and every node acts both as a `server` and `client`.
+
+
 ### System requirement
     Java >=8
     Maven >=3.5.4
