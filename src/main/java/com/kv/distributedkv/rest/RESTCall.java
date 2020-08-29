@@ -22,10 +22,11 @@ public class RESTCall {
     @Autowired
     private OrchestratorService orchestratorService;
 
-    public KVResponse getDataFromNode(String key, ServicePhysicalNode node, int replicationFactor) {
+    public KVResponse getDataFromNode(String key, ServicePhysicalNode primaryNode, int replicationFactor) {
         try {
             String httpClientResponse;
-            String url = String.format("http://%s:%s%s/%s", node.getIp(), node.getPort(), KVUrl.KV, key);
+            String url = String.format("http://%s:%s%s/%s", primaryNode.getIp(), primaryNode.getPort(), KVUrl.KV_GET_FROM_NODE, key);
+            KVUtil.log(String.format("Trying to get data from PRIMARY node: %s", url));
             Request request = new Request.Builder().url(url).build();
             Response response = httpClient.newCall(request).execute();
             boolean isSuccess = response.isSuccessful();
@@ -35,9 +36,10 @@ public class RESTCall {
                 return JsonConverter.convertJsonToObjectSafe(httpClientResponse, KVResponse.class);
             } else {
                 int i = 1;
-                while (i <= replicationFactor) {
-                    ServicePhysicalNode secondaryNode = orchestratorService.getConsistentHash().getNthPrimaryNode(key, i);
-                    url = String.format("http://%s:%s%s/%s", secondaryNode.getIp(), secondaryNode.getPort(), KVUrl.KV, key);
+                while (i <= replicationFactor && orchestratorService.getAvailableNodes().getAllNodes().size() > replicationFactor) {
+                    ServicePhysicalNode secondaryNode = orchestratorService.getConsistentHash().getNthSecondaryNodeOfKey(key, i);
+                    url = String.format("http://%s:%s%s/%s", secondaryNode.getIp(), secondaryNode.getPort(), KVUrl.KV_GET_FROM_NODE, key);
+                    KVUtil.log(String.format("Trying to get data from SECONDARY node: %s number: %s", url, i));
                     request = new Request.Builder().url(url).build();
                     response = httpClient.newCall(request).execute();
                     isSuccess = response.isSuccessful();
@@ -50,7 +52,7 @@ public class RESTCall {
                     }
                 }
                 response.body().close();
-                throw new RuntimeException("Data can not be found");
+                throw new RuntimeException("Data can not be found in ANY node");
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -82,6 +84,7 @@ public class RESTCall {
                 response.body().close();
                 return JsonConverter.convertJsonToObjectSafe(httpClientResponse, KVResponse.class);
             } else {
+                response.body().close();
                 throw new RuntimeException("Data can not be posted");
             }
         } catch (IOException e) {

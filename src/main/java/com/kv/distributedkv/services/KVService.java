@@ -49,28 +49,49 @@ public class KVService {
     public KVResponse get(String key) {
         KVResponse kvResponse = new KVResponse();
         try {
-            ServicePhysicalNode node = orchestratorService.getConsistentHash().getPrimaryNode(key);
+            ServicePhysicalNode primaryNode = orchestratorService.getConsistentHash().getPrimaryNodeOfKey(key);
+            KVUtil.log(String.format("Primary node for this key: %s is %s:%s", key, primaryNode.getIp(), primaryNode.getPort()));
             Pair<String, String> ipPortPair = KVUtil.getIPAndPort();
             String thisHostName = ipPortPair.getLeft();
             String thisPort = ipPortPair.getRight();
-            if (node.getPort().equalsIgnoreCase(thisPort) && thisHostName.equalsIgnoreCase(node.getIp())) {
+            KVUtil.log(String.format("This hostname and port is: %s:%s", thisHostName, thisPort));
+            if (primaryNode.getPort().equalsIgnoreCase(thisPort) && thisHostName.equalsIgnoreCase(primaryNode.getIp())) {
                 String value = data.get(key);
                 if (value == null) {
                     throw new RuntimeException("Value is not found");
                 }
                 kvResponse.setKey(key);
                 kvResponse.setValue(value);
-                kvResponse.setMetaData(JsonConverter.convertObjectToJsonSafe(node));
             } else {
                 // Rest call
-                return restCall.getDataFromNode(key, node, replicationFactor);
+                return restCall.getDataFromNode(key, primaryNode, replicationFactor);
             }
             kvResponse.setStatus(ResponseStatus.SUCCESS);
         } catch (Exception e) {
-            KVUtil.log("Error in getting data", e);
+            String msg = String.format("Error in getting data on PRIMARY URL for key: %s", key);
+            // KVUtil.log(msg, e);
+            KVUtil.log(msg);
             return KVUtil.getErrorBaseResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e);
         }
         return kvResponse;
+    }
+
+    public KVResponse getFromANode(String key) {
+        KVResponse kvResponse = new KVResponse();
+        try {
+            String value = data.get(key);
+            if (value == null) {
+                throw new RuntimeException("Value is not found");
+            }
+            kvResponse.setKey(key);
+            kvResponse.setValue(value);
+            kvResponse.setStatus(ResponseStatus.SUCCESS);
+            return kvResponse;
+        } catch (Exception e) {
+            String msg = String.format("Error in getting data for key: %s", key);
+            KVUtil.log(msg, e);
+            return KVUtil.getErrorBaseResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e);
+        }
     }
 
     public KVResponse post(String key, String payload, Integer replication) {
@@ -78,9 +99,9 @@ public class KVService {
         try {
             ServicePhysicalNode node;
             if (replication == null) {
-                node = orchestratorService.getConsistentHash().getPrimaryNode(key);
+                node = orchestratorService.getConsistentHash().getPrimaryNodeOfKey(key);
             } else {
-                node = orchestratorService.getConsistentHash().getNthPrimaryNode(key, replication);
+                node = orchestratorService.getConsistentHash().getNthSecondaryNodeOfKey(key, replication);
             }
             Pair<String, String> ipPortPair = KVUtil.getIPAndPort();
             String thisHostName = ipPortPair.getLeft();
@@ -94,13 +115,12 @@ public class KVService {
                 data.put(key, payload);
                 kvResponse.setValue(payload);
                 kvResponse.setKey(key);
-                kvResponse.setMetaData(JsonConverter.convertObjectToJsonSafe(node));
             } else {
                 // Rest call
                 return restCall.postDataToNode(key, payload, node, replication);
             }
             kvResponse.setStatus(ResponseStatus.SUCCESS);
-            if(replication == null) {
+            if (replication == null) {
                 replicateData(key, payload, replicationFactor, replicationStrategy);
             }
         } catch (Exception e) {
@@ -124,8 +144,12 @@ public class KVService {
     }
 
     private void doReplicateData(String key, String payload, int replicationFactor) {
+        boolean isReplicationPossible = orchestratorService.getAvailableNodes().getAllNodes().size() > replicationFactor;
+        if (!isReplicationPossible) {
+            return;
+        }
         for (int i = 1; i <= replicationFactor; i++) {
-            ServicePhysicalNode node = orchestratorService.getConsistentHash().getNthPrimaryNode(key, i);
+            ServicePhysicalNode node = orchestratorService.getConsistentHash().getNthSecondaryNodeOfKey(key, i);
             String msg = String.format("Replicating key: `%s` on %s:%s", key, node.getIp(), node.getPort());
             KVUtil.log(msg);
             KVResponse r = restCall.postDataToNode(key, payload, node, i);

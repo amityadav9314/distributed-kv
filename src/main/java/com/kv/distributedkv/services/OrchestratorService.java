@@ -4,10 +4,25 @@ import com.kv.distributedkv.dtos.AvailableNodes;
 import com.kv.distributedkv.dtos.ServicePhysicalNode;
 import com.kv.distributedkv.hash.ConsistentHash;
 import com.kv.distributedkv.utils.KVUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class OrchestratorService {
+
+    @Value("${replication.factor}")
+    private static int replicationFactor;
+
+    @Autowired
+    public OrchestratorService(
+            @Value("${replication.factor}") int replicationFactor
+    ) {
+        OrchestratorService.replicationFactor = replicationFactor;
+    }
 
     private AvailableNodes availableNodes = new AvailableNodes();
     private ServicePhysicalNode orchestrator;
@@ -46,9 +61,9 @@ public class OrchestratorService {
             ServicePhysicalNode newNode = new ServicePhysicalNode(ip, port, md5HashStr, isOrchestrator);
             availableNodes.getAllNodes().add(newNode);
         }
+        resetAvailableNodes(availableNodes);
         return availableNodes;
     }
-
 
     public AvailableNodes resetAvailableNodes(AvailableNodes newAvailableNodes) {
         availableNodes = newAvailableNodes;
@@ -66,5 +81,20 @@ public class OrchestratorService {
 
     public ConsistentHash getConsistentHash() {
         return consistentHash;
+    }
+
+    public AvailableNodes getAvailableNodesForAKey(String key) {
+        AvailableNodes allAvailableNodes = new AvailableNodes();
+        List<ServicePhysicalNode> allNodes = new ArrayList<>();
+        ServicePhysicalNode primaryNode = consistentHash.getPrimaryNodeOfKey(key);
+        allNodes.add(primaryNode);
+        int i = 1;
+        while(i <= replicationFactor && availableNodes.getAllNodes().size() > replicationFactor) {
+            ServicePhysicalNode secondaryNode = consistentHash.getNthSecondaryNodeOfKey(key, i);
+            allNodes.add(secondaryNode);
+            i++;
+        }
+        allAvailableNodes.setAllNodes(allNodes);
+        return allAvailableNodes;
     }
 }

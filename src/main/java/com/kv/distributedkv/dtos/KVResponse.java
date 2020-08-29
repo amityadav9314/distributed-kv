@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class KVResponse extends BaseResponse {
     private String key;
     private String value;
-    private String metaData;
 
     public String getKey() {
         return key;
@@ -22,13 +21,5 @@ public class KVResponse extends BaseResponse {
 
     public void setValue(String value) {
         this.value = value;
-    }
-
-    public String getMetaData() {
-        return metaData;
-    }
-
-    public void setMetaData(String metaData) {
-        this.metaData = metaData;
     }
 }

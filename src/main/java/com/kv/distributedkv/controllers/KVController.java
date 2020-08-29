@@ -25,13 +25,33 @@ public class KVController {
         return kvRes;
     }
 
+    @GetMapping(KVUrl.KV_GET_FROM_NODE + "/{key}")
+    public KVResponse getFromPrimaryNode(
+            @PathVariable("key") String key,
+            HttpServletResponse servletResponse
+    ) {
+        KVResponse kvRes = kvService.getFromANode(key);
+        if (kvRes.getStatus() == ResponseStatus.FAILED) {
+            servletResponse.setStatus(404);
+        }
+        return kvRes;
+    }
+
     @PostMapping(KVUrl.KV + "/{key}")
-    public KVResponse post(@PathVariable("key") String key, @RequestBody String data) {
-        return kvService.post(key, data, null);
+    public KVResponse post(@PathVariable("key") String key, @RequestBody String data, HttpServletResponse servletResponse) {
+        KVResponse kvRes = kvService.post(key, data, null);
+        if (kvRes.getStatus() == ResponseStatus.FAILED) {
+            servletResponse.setStatus(500);
+        }
+        return kvRes;
     }
 
     @PostMapping(KVUrl.KV_REPLICATE + "/{key}/{replication}")
-    public KVResponse postReplicate(@PathVariable("key") String key, @PathVariable("replication") int replication, @RequestBody String data) {
+    public KVResponse postReplicate(
+            @PathVariable("key") String key,
+            @PathVariable("replication") int replication,
+            @RequestBody String data
+    ) {
         return kvService.post(key, data, replication);
     }
 

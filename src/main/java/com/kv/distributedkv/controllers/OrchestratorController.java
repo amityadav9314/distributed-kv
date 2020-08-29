@@ -36,4 +36,9 @@ public class OrchestratorController {
     public AvailableNodes allNodes() {
         return orchestratorService.getAvailableNodes();
     }
+
+    @GetMapping(KVUrl.ALL_NODES + "/{key}")
+    public AvailableNodes allNodesForKey(@PathVariable("key") String key) {
+        return orchestratorService.getAvailableNodesForAKey(key);
+    }
 }

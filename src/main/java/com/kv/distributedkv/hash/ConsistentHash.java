@@ -41,7 +41,7 @@ public class ConsistentHash {
         throw new RuntimeException("Node not found to remove");
     }
 
-    public ServicePhysicalNode getPrimaryNode(String key) {
+    public ServicePhysicalNode getPrimaryNodeOfKey(String key) {
         if (ring.isEmpty()) {
             throw new RuntimeException("Ring is empty");
         }
@@ -52,7 +52,7 @@ public class ConsistentHash {
         return ring.get(nodeHashValue);
     }
 
-    public ServicePhysicalNode getNthPrimaryNode(String key, int nth) {
+    public ServicePhysicalNode getNthSecondaryNodeOfKey(String key, int nth) {
         if (ring.isEmpty()) {
             throw new RuntimeException("Ring is empty");
         }
@@ -66,7 +66,7 @@ public class ConsistentHash {
         ServicePhysicalNode nthNode;
         try {
             nthNode = values.get(nth);
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             values = new ArrayList<>(ring.values());
             nthNode = values.get(nth);
         }
