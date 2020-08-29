@@ -1,5 +1,5 @@
 #!/bin/sh
-cd /tmp/distributed-kv
+mvn clean install
 echo "Stopping server..."
 kill -9 $(lsof -ti:8080)
 kill -9 $(lsof -ti:8081)

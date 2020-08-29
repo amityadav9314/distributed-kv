@@ -8,7 +8,6 @@
     git clone git@github.com:amityadav9314/distributed-kv.git
     mv distributed-kv /tmp
     cd /tmp/distributed-kv
-    mvn clean install
     ./demo_kv.sh
     
 ### After following above steps following node must be available up and running
@@ -31,5 +30,15 @@
     
 ### To see what all nodes a particular node recognize
     http://localhost:8084/all-nodes
+    
+### To see on which nodes a key exists
+    http://127.0.0.1:8080/all-nodes/my_key
+    
+### Things pending
+    * Rebalancing
+    * gRPC call instead of REST call
+    * Auto-choose orchestrator (Right now orchestrator is single point of failure)
+    * Implement gossip protocol for node discovery, right now orchestrator handles this thing
+    * Load balancer server
     
 
