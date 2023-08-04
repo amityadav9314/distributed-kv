@@ -64,6 +64,10 @@ public class KVUtil {
     public static Pair<String, String> getIPAndPort() throws UnknownHostException {
         String thisHostName = InetAddress.getLocalHost().getHostAddress();
         String thisPort = System.getProperty("server.port");
+        if(thisPort == null) {
+            System.out.println("Setting a default port 8080 as no VM args named server.port is passed");
+            thisPort = "8080";
+        }
         return Pair.of(thisHostName, thisPort);
     }
 
